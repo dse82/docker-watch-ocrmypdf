@@ -1,25 +1,17 @@
 version: '3.5'
 
-volumes:
-    consume:
-
 services:
-
-    ocrsftp:
-        image: atmoz/sftp:alpine
-        volumes:
-        - consume:/home/ocr/consume
-        ports:
-        - "2022:22"
-        command: user:password:1000
-
     ocrwatch:
-        image: mkuhlmann/watch-ocrmypdf
-        volumes:
-            - consume:/consume
+        build: .
         environment:
             # obscure password with rclone obscure PASSWORD
-            - WOCR_AFTERCMD=rclone copy --webdav-url https://NEXTCLOUD_URL/remote.php/webdav/ --webdav-user NEXTCLOUD_USER --webdav-pass NEXTCLOUD_PASS_OBSCURED  %FILE% :webdav:/OCR
-            - WOCR_CMD=ocrmypdf -l eng+deu --rotate-pages --deskew --clean --clean-final --jobs 2 --output-type pdfa --jbig2-lossy --optimize 3 %INFILE% %OUTFILE%
-            - WOCR_CMD_onlyocr=ocrmypdf -l eng+deu --rotate-pages --jobs 2 --output-type pdfa %INFILE% %OUTFILE%
-            
+            - WOCR_CMD=ocrmypdf -l eng+deu --rotate-pages --jobs 2 --output-type pdfa %INFILE% %OUTFILE%
+            - WOCR_AFTERCMD=mv %FILE% /output
+        volumes:
+          - type: bind
+            source: ./in
+            target: /consume
+          - type: bind
+            source: ./out
+            target: /output
+
